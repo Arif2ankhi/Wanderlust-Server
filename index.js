@@ -1,12 +1,14 @@
 import express from 'express'
-import { MongoClient } from 'mongodb';
+import cors from 'cors'
+import { MongoClient, ObjectId } from 'mongodb';
 import 'dotenv/config'
 
 
 const app = express()
 const PORT = 8000
 
-
+app.use(cors())
+app.use(express.json());
 //Code copied from MongoDB
 
 const client = new MongoClient(process.env.MONGODB_URI);
@@ -21,9 +23,43 @@ export async function connectToMongoDB() {
   }
 }
 
-connectToMongoDB()
+const mongoClient = await connectToMongoDB();
+
+const db = mongoClient.db("wanderlust")
+const  destinationCollection = db.collection("destination")
 
 
+
+//Start to send  create and send data from backend
+
+//add-destination form backend 
+app.post('/add-destination', async(req, res) =>{
+    const data = req.body
+    const result = await destinationCollection.insertOne(data)
+
+    console.log(result);
+    res.send(result)
+
+    //API- http://localhost:8000/add-destination
+
+})
+
+//destination in backend 
+
+app.get('/destinations', async(req, res)=> {
+    const result = await destinationCollection.find().toArray()
+    res.send(result)
+
+})
+
+//destinations details (/: id/params)
+
+app.get('/destination/:id', async(req, res)=>{
+    const {id}= req.params
+    const result = await destinationCollection.findOne({_id: new ObjectId(id)})
+    
+    res.send(result)
+})
 
 
 //http://localhost:8000
