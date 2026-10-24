@@ -62,6 +62,25 @@ app.get('/destination/:id', async(req, res)=>{
 })
 
 
+//Edit data in form 
+
+app.patch('/destination/:id', async(req, res)=>{
+    const  {id} = req.params
+    const updatedData = req.body
+    const result = await destinationCollection.updateOne(
+        {_id: new ObjectId(id)},
+        {$set:updatedData}
+    )
+    res.json(result)
+})
+
+app.delete('/destination/:id', async (req, res)=>{
+    const  {id} = req.params
+    const result = await destinationCollection.deleteOne({_id: new ObjectId(id)})
+    res.json(result)
+
+})
+
 //http://localhost:8000
 
 app.get('/', (req, res) =>{
