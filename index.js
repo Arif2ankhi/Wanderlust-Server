@@ -27,6 +27,7 @@ const mongoClient = await connectToMongoDB();
 
 const db = mongoClient.db("wanderlust")
 const  destinationCollection = db.collection("destination")
+const bookingCollection= db.collection("bookings")
 
 
 
@@ -79,6 +80,15 @@ app.delete('/destination/:id', async (req, res)=>{
     const result = await destinationCollection.deleteOne({_id: new ObjectId(id)})
     res.json(result)
 
+})
+
+// Bookings database collection  data from backend 
+
+
+app.post('/booking', async(req, res)=>{
+    const data = req.body
+    const result = await bookingCollection.insertOne(data)
+    res.send(result)
 })
 
 //http://localhost:8000
