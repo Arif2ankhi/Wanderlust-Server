@@ -91,7 +91,17 @@ app.post('/booking', async(req, res)=>{
     res.send(result)
 })
 
-//http://localhost:8000
+// Access with email check all destinatio book with this email
+app.get('/my-bookings/:email', async(req, res)=> {
+      const {email}= req.params
+    const result = await bookingCollection.find({email: email}).toArray()
+    
+    res.send(result)
+})
+
+
+
+//http://localhost:8000/my-bookings
 
 app.get('/', (req, res) =>{
     res.send({message: 'Server is running fine!'})
