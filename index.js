@@ -28,6 +28,20 @@ const db = mongoClient.db("wanderlust");
 const destinationCollection = db.collection("destination");
 const bookingCollection = db.collection("bookings");
 
+// middleware veryfy
+
+const verifyApi = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  console.log(authHeader);
+
+  if (authHeader !== "user logged in") {
+    return res.status(401).send({ msg: "Unauthorised" });
+  }
+
+  console.log("I am middleware");
+  next();
+};
+
 //Start to send  create and send data from backend
 
 //add-destination form backend
@@ -50,7 +64,7 @@ app.get("/destinations", async (req, res) => {
 
 //destinations details (/: id/params)
 
-app.get("/destination/:id", async (req, res) => {
+app.get("/destination/:id", verifyApi, async (req, res) => {
   const { id } = req.params;
   const result = await destinationCollection.findOne({ _id: new ObjectId(id) });
 
@@ -93,12 +107,11 @@ app.get("/my-bookings/:email", async (req, res) => {
   res.send(result);
 });
 
-
-app.delete('/my-bookings/:id', async(req, res)=>{
-    const {id} = req.params
-    const result = await bookingCollection.deleteOne({_id:id})
-    res.send(result)
-})
+app.delete("/my-bookings/:id", async (req, res) => {
+  const { id } = req.params;
+  const result = await bookingCollection.deleteOne({ _id: id });
+  res.send(result);
+});
 
 //http://localhost:8000/my-bookings
 
