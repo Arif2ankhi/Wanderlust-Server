@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import { MongoClient, ObjectId } from "mongodb";
 import "dotenv/config";
+import { createRemoteJWKSet } from "jose";
+import { jwtVerify } from "jose";;
 
 const app = express();
 const PORT = 8000;
@@ -30,22 +32,38 @@ const bookingCollection = db.collection("bookings");
 
 // middleware veryfy
 
-const verifyApi = (req, res, next) => {
+const verifyToken = async(req, res, next) => {
   const authHeader = req.headers.authorization;
-  console.log(authHeader);
-
-  if (authHeader !== "user logged in") {
+  if(!authHeader) {
     return res.status(401).send({ msg: "Unauthorised" });
-  }
 
-  console.log("I am middleware");
-  next();
+  }
+  const token = authHeader.split(" ")[1]
+if(!token){
+  return res.status(401).send({ msg: "Unauthorised" });
+
+}
+
+const JWKS = createRemoteJWKSet( new URL('http://localhost:3000/api/auth/jwks'))
+
+ 
+try{
+  const {payload} = await jwtVerify (token, JWKS)
+   next();
+
+}catch(error){
+  return res.status(500).send({ msg: "Server Error!" });
+  
+}
+
+//  console.log(payload);
+ 
 };
 
 //Start to send  create and send data from backend
 
 //add-destination form backend
-app.post("/add-destination", async (req, res) => {
+app.post("/add-destination", verifyToken, async (req, res) => {
   const data = req.body;
   const result = await destinationCollection.insertOne(data);
 
@@ -62,9 +80,17 @@ app.get("/destinations", async (req, res) => {
   res.send(result);
 });
 
+// featured destinations 
+
+app.get('/featured-destinations', async(req, res)=> {
+  const result = await destinationCollection.find().limit(5).toArray()
+  res.send(result)
+
+})
+
 //destinations details (/: id/params)
 
-app.get("/destination/:id", verifyApi, async (req, res) => {
+app.get("/destination/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const result = await destinationCollection.findOne({ _id: new ObjectId(id) });
 
@@ -73,7 +99,7 @@ app.get("/destination/:id", verifyApi, async (req, res) => {
 
 //Edit data in form
 
-app.patch("/destination/:id", async (req, res) => {
+app.patch("/destination/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const updatedData = req.body;
   const result = await destinationCollection.updateOne(
@@ -83,7 +109,7 @@ app.patch("/destination/:id", async (req, res) => {
   res.json(result);
 });
 
-app.delete("/destination/:id", async (req, res) => {
+app.delete("/destination/:id",verifyToken, async (req, res) => {
   const { id } = req.params;
   const result = await destinationCollection.deleteOne({
     _id: new ObjectId(id)
@@ -100,7 +126,7 @@ app.post("/booking", async (req, res) => {
 });
 
 // Access with email check all destinatio book with this email
-app.get("/my-bookings/:email", async (req, res) => {
+app.get("/my-bookings/:email",verifyToken, async (req, res) => {
   const { email } = req.params;
   const result = await bookingCollection.find({ email: email }).toArray();
 
